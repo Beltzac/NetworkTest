@@ -1,11 +1,11 @@
-﻿using DNS.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using DNS.Client;
 
 namespace ConsoleApp1
 {
@@ -26,42 +26,17 @@ namespace ConsoleApp1
             public TestSubject T { get; }
             public IPAddress Server { get; }
 
-            public static IPAddress[] GetDnsAdresses(bool ip4Wanted, bool ip6Wanted)
-            {
-                NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
-                HashSet<IPAddress> dnsAddresses = new HashSet<IPAddress>();
-
-                foreach (NetworkInterface networkInterface in interfaces)
-                {
-                    if (networkInterface.OperationalStatus == OperationalStatus.Up)
-                    {
-                        IPInterfaceProperties ipProperties = networkInterface.GetIPProperties();
-
-                        foreach (IPAddress forAddress in ipProperties.DnsAddresses)
-                        {
-                            if ((ip4Wanted && forAddress.AddressFamily == AddressFamily.InterNetwork) || (ip6Wanted && forAddress.AddressFamily == AddressFamily.InterNetworkV6))
-                            {
-                                dnsAddresses.Add(forAddress);
-                            }
-                        }
-                    }
-                }
-
-                return dnsAddresses.ToArray();
-            }
-
             public async Task<TestResult> Test()
             {
-    
                 try
                 {
-                    DnsClient client = new DnsClient(Server);
+                    var client = new DnsClient(Server);
 
                     // Create request bound to 8.8.8.8
                     //ClientRequest request = client.Create();
 
                     // Returns a list of IPs
-                    IList<IPAddress> ips = await client.Lookup(T.Uri.Host);
+                    var ips = await client.Lookup(T.Uri.Host);
 
                     return new TestResult
                     {
@@ -79,7 +54,24 @@ namespace ConsoleApp1
                 }
             }
 
+            public static IPAddress[] GetDnsAdresses(bool ip4Wanted, bool ip6Wanted)
+            {
+                var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+                var dnsAddresses = new HashSet<IPAddress>();
+
+                foreach (var networkInterface in interfaces)
+                    if (networkInterface.OperationalStatus == OperationalStatus.Up)
+                    {
+                        var ipProperties = networkInterface.GetIPProperties();
+
+                        foreach (var forAddress in ipProperties.DnsAddresses)
+                            if ((ip4Wanted && forAddress.AddressFamily == AddressFamily.InterNetwork) ||
+                                (ip6Wanted && forAddress.AddressFamily == AddressFamily.InterNetworkV6))
+                                dnsAddresses.Add(forAddress);
+                    }
+
+                return dnsAddresses.ToArray();
+            }
         }
     }
 }
-
